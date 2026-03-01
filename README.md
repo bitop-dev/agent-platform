@@ -2,7 +2,7 @@
 
 An AI agent platform for building, running, and managing autonomous AI agents. Create agents with custom personas and skills, run them from the CLI or browser, stream output in real time, and manage everything through a web portal.
 
-> **Status**: All 9 phases complete + WASM sandbox system. Standalone agent binary, Go API server, React web portal, and community skill registry all operational. 150+ tests passing across repos.
+> **Status**: Feature-complete. All 10 phases done (0–9 + WASM sandbox). ~170 source files, 190+ tests, 5 repos on GitHub.
 
 ---
 
@@ -10,56 +10,74 @@ An AI agent platform for building, running, and managing autonomous AI agents. C
 
 | Repository | Language | Description | Status |
 |---|---|---|---|
-| [**agent-core**](https://github.com/bitop-dev/agent-core) | Go | Standalone CLI binary + `pkg/agent` library | ✅ 100+ files, 15K lines, 130+ tests |
-| [**agent-platform-api**](https://github.com/bitop-dev/agent-platform-api) | Go | REST API server with auth, persistence, WebSocket | ✅ 90 handlers, 22 tests |
-| [**agent-platform-web**](https://github.com/bitop-dev/agent-platform-web) | TypeScript | Bun + Vite + React web portal | ✅ 13 pages, industrial theme |
+| [**agent-core**](https://github.com/bitop-dev/agent-core) | Go | Standalone CLI binary + `pkg/agent` library | ✅ 88 files, 14K lines, 171 tests |
+| [**agent-platform-api**](https://github.com/bitop-dev/agent-platform-api) | Go | REST API server (Fiber, sqlc, 62 endpoints) | ✅ 46 files, 8.6K lines, 22 tests |
+| [**agent-platform-web**](https://github.com/bitop-dev/agent-platform-web) | TypeScript | React + Vite + shadcn/ui web portal | ✅ 36 files, 14 pages |
 | [**agent-platform-skills**](https://github.com/bitop-dev/agent-platform-skills) | Go → WASM | Community skill registry (git-native) | ✅ 10 skills (4 WASM + 6 instruction) |
-| [**agent-platform-docs**](https://github.com/bitop-dev/agent-platform-docs) (this repo) | Markdown | Architecture, design docs, planning | ✅ Comprehensive |
+| [**agent-platform-docs**](https://github.com/bitop-dev/agent-platform-docs) (this repo) | Markdown | Architecture, design docs, diagrams | ✅ Comprehensive |
 
 ---
 
 ## Architecture
 
+![System Architecture](BLDER_DOCS/diagrams/01-system-architecture.png)
+
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│          platform-web (Bun + Vite + React)                  │
-│    Dashboard · Agents · Runs · Skills · Teams · Keys        │
+│          platform-web (React + Vite + shadcn/ui)            │
+│    Dashboard · Agents · Runs · Skills · Teams · Schedules   │
+│    Audit Log · API Keys · OAuth Login                       │
 └────────────────────────────┬────────────────────────────────┘
                              │ REST + WebSocket
 ┌────────────────────────────▼────────────────────────────────┐
 │                platform-api (Go/Fiber)                      │
-│  JWT Auth · Agent CRUD · Runs · Skills · Schedules · Teams  │
-│  WebSocket Hub · Registry Sync · Health/Metrics             │
+│  JWT + OAuth · 62 endpoints · RBAC · Audit (18 actions)     │
+│  WebSocket Hub · Registry Sync · Scheduler · Prometheus     │
 └──────┬────────────────────────────┬─────────────────────────┘
        │ imports pkg/agent          │ syncs registry.json
 ┌──────▼──────────────┐    ┌───────▼──────────────────┐
 │    agent-core       │    │   Skill Sources (GitHub)  │
 │    (Go binary)      │    │                           │
 │                     │    │  bitop-dev/skills (default)│
-│  · 3 LLM Providers  │    │  mycorp/skills (custom)   │
-│  · 9 Core Tools     │    │  anyone/skills (community)│
-│  · WASM Sandbox     │    └───────────────────────────┘
-│  · Skill Loader     │
-│  · MCP Client       │
-│  · Context Mgmt     │
+│  · 3 LLM providers  │    │  mycorp/skills (custom)   │
+│  · 9 core tools     │    │  anyone/skills (community)│
+│  · WASM sandbox     │    └───────────────────────────┘
+│  · Container sandbox│
+│  · MCP client       │
+│  · Context mgmt     │
 └─────────────────────┘
 ```
 
 ### Tool Execution Model
 
+![Tool Execution Model](BLDER_DOCS/diagrams/02-tool-execution-model.png)
+
 ```
 Tool Executor
 ├── native      — 9 built-in Go tools (bash, read_file, agent_spawn, etc.)
-├── wasm        — .wasm modules via Wazero (skill tools, sandboxed)
-├── container   — Docker/Podman OCI containers (full isolation)
-├── mcp         — MCP server protocol (external tool servers)
-└── subprocess  — legacy raw scripts (dev/backward compat)
+├── wasm        — .wasm modules via Wazero (skill tools, zero deps)
+├── container   — Docker/Podman OCI containers (full OS isolation)
+└── mcp         — MCP server protocol (external tool servers)
 ```
 
+### WASM Sandbox
+
+![WASM Sandbox](BLDER_DOCS/diagrams/04-wasm-sandbox.png)
+
 All community skill tools are compiled to **WebAssembly** and run inside Wazero's sandbox:
-- **Zero external dependencies** — no Python, no pip, no CLI tools to install
-- **Capability-based security** — tools can only access granted filesystem paths and network hosts
-- **Portable** — .wasm runs on any OS where agent-core runs
+- **Zero external dependencies** — no Python, no pip, no CLI tools
+- **Capability-based security** — tools only access granted filesystem paths and network hosts
+- **Host functions** — `http_request` and `http_request_headers` provide HTTP to WASM modules
+- **Module caching** — SHA-256 content hash, ~530ms first call, ~3ms cached (160× speedup)
+- **Portable** — `.wasm` runs on any OS/arch where agent-core runs
+
+### Container Sandbox
+
+For full OS-level isolation, skills can run inside Docker/Podman containers:
+- Read-only root filesystem, no privilege escalation
+- Memory + CPU limits, network disabled by default
+- Ephemeral — container destroyed after each call (~123ms per call)
+- Auto-detects Docker or Podman
 
 ---
 
@@ -67,39 +85,45 @@ All community skill tools are compiled to **WebAssembly** and run inside Wazero'
 
 ### agent-core ✅
 
-Standalone CLI binary that runs AI agents with tool calling, WASM-sandboxed skills, and safety features.
+Standalone CLI binary that runs AI agents with tool calling, sandboxed skills, and safety features.
 
-- **3 LLM providers**: OpenAI Chat Completions, Anthropic Messages, OpenAI Responses
+- **3 LLM providers**: OpenAI Chat Completions, Anthropic Messages, OpenAI Responses (+ Ollama)
 - **9 core tools**: `bash` (opt-out), `read_file`, `write_file`, `edit_file`, `list_dir`, `grep`, `http_fetch`, `tasks`, `agent_spawn`
-- **WASM sandbox**: Wazero runtime with HTTP host functions, capability-based filesystem + network security
-- **Container sandbox**: Docker/Podman support for full OS-level isolation
-- **Skill system**: install from GitHub registries, auto-install on run, WASM + subprocess dispatch
-- **MCP support**: stdio + HTTP transports for external tool servers
+- **WASM sandbox**: Wazero runtime, HTTP host functions (basic + with headers), capability-based security
+- **Container sandbox**: Docker/Podman, read-only root, memory/CPU limits, network isolation
+- **11 example configs**: minimal, native tools, WASM skills, container, mixed-runtime, orchestrator, MCP, Ollama
+- **Skill system**: install from GitHub registries, auto-fetch on run, WASM + container dispatch
+- **MCP support**: stdio + HTTP/SSE transports for external tool servers
 - **ReliableProvider**: 3-level failover, exponential backoff, API key rotation
-- **Context compaction**: proactive + reactive LLM-summarize with tool boundary guard
-- **Safety**: loop detection, credential scrubbing, approval manager, heartbeat, deferred-action detection
-- **`pkg/agent` public API**: Builder pattern for embedding in other Go programs
+- **Context compaction**: proactive + reactive LLM-summarize
+- **Safety**: loop detection (3 strategies), credential scrubbing, approval manager, heartbeat
+- **`pkg/agent` public API**: Builder pattern, QuickRun, sandbox registry
+- **`pkg/hostcall`**: WASM guest bindings (`//go:wasmimport`) for tool authors
 
 ### agent-platform-api ✅
 
 Go REST API server wrapping agent-core with persistence, auth, and real-time streaming.
 
-- **90 REST endpoints** with JWT auth, rate limiting, request IDs
-- **Run execution**: async goroutine pool, WebSocket live streaming
-- **Scheduling**: cron/interval/one-shot with overlap policies
-- **Teams**: RBAC (owner/admin/member/viewer), invitations
+- **62 REST endpoints** with JWT auth, OAuth (GitHub + Google), rate limiting, request IDs
+- **Run execution**: async goroutine pool, WASM-sandboxed skill tools, WebSocket live streaming
+- **Scheduling**: cron/interval/one-shot with overlap policies (skip, queue, parallel)
+- **Teams**: RBAC (owner/admin/member/viewer), invitations, team-scoped agents/runs
+- **Audit logging**: 18 action types across all state-changing operations
 - **API key management**: AES-256-GCM encryption at rest
-- **Health**: `/healthz`, `/readyz`, `/metrics` endpoints
-- **Graceful shutdown**: drain scheduler → drain runner → timeout
+- **Observability**: `/health`, `/readyz`, `/metrics` (Prometheus text format)
+- **Graceful shutdown**: drain scheduler → drain runner → close DB → shutdown server
+- **Docker**: multi-stage build, non-root user, healthcheck
 
 ### agent-platform-web ✅
 
 React SPA with "AgentOps Command Center" industrial theme.
 
-- **13 pages**: dashboard, agents, runs, run detail, skills, teams, schedules, API keys, login/register
+- **14 pages**: dashboard, agents (list/detail/new/edit), runs (list/detail), skills, teams, schedules, audit log, API keys, login, register
 - **Industrial design**: dark charcoal + amber/gold, LED indicators, scan-line overlays, JetBrains Mono
+- **OAuth**: GitHub + Google buttons, avatar display in sidebar
 - **Live streaming**: WebSocket run output with collapsed event timeline
-- **Tech**: Bun, Vite, React 19, Tailwind v4, shadcn/ui, React Query, Zustand
+- **Team management**: create teams, invite members, assign agents to teams
+- **Docker**: multi-stage Bun→nginx build, SPA routing, API/WS proxy
 
 ### agent-platform-skills ✅
 
@@ -109,8 +133,8 @@ Git-native community skill registry with WASM-sandboxed tools.
 | Skill | Description | Network |
 |---|---|---|
 | 🔍 `web_search` | DuckDuckGo search | `html.duckduckgo.com` |
-| 🌐 `web_fetch` | Fetch URL → markdown | Target host |
-| 🐙 `github` | GitHub issues & PRs | `api.github.com` |
+| 🌐 `web_fetch` | Fetch URL → readable content | Target host |
+| 🐙 `github` | GitHub issues & PRs (2 tools) | `api.github.com` |
 | 💬 `slack_notify` | Slack webhook POST | `hooks.slack.com` |
 
 **Instruction-only skills:** `summarize`, `report`, `code_review`, `data_extract`, `write_doc`, `debug_assist`
@@ -125,29 +149,42 @@ Git-native community skill registry with WASM-sandboxed tools.
 cd agent-core && go build -o bin/agent-core ./cmd/agent-core/
 export OPENAI_API_KEY=sk-...
 
-# Install skills
-./bin/agent-core skill install web_search
-./bin/agent-core skill install summarize
+# Simplest possible run — no skills
+./bin/agent-core run -c examples/minimal-agent.yaml \
+  --mission "Explain goroutines in 3 sentences"
 
-# Run — WASM sandbox auto-initializes
+# With WASM-sandboxed web search
+./bin/agent-core skill install web_search
 ./bin/agent-core run -c examples/research-agent.yaml \
-  --mission "Search for Go 1.24 changes and summarize"
+  --mission "What are the major changes in Go 1.24?"
+
+# Interactive chat with all 9 built-in tools
+./bin/agent-core chat -c examples/native-tools-agent.yaml
 ```
 
-### Option B: Full Platform
+### Option B: Full Platform (Docker)
 
 ```bash
-# 1. Start API
+cp .env.example .env
+# Edit .env with your JWT_SECRET and optionally OAuth credentials
+docker compose up --build
+# Open http://localhost:3002
+```
+
+### Option C: Full Platform (Local Dev)
+
+```bash
+# Terminal 1: API
 cd agent-platform-api
 PORT=8090 JWT_SECRET=dev-secret-change-me-32chars-min \
   DATABASE_URL=sqlite://data/platform.db go run ./cmd/api
 
-# 2. Start Web
+# Terminal 2: Web
 cd agent-platform-web
 echo "VITE_API_URL=http://localhost:8090" > .env
 bun install && bun run dev --port 3002
 
-# 3. Open http://localhost:3002
+# Open http://localhost:3002
 ```
 
 ---
@@ -156,23 +193,41 @@ bun install && bun run dev --port 3002
 
 | Phase | Status | What |
 |---|---|---|
-| **0 — Planning** | ✅ | Architecture docs, deep dives, diagrams |
+| **0 — Planning** | ✅ | Architecture docs, deep dives, 6 diagrams |
 | **1 — agent-core** | ✅ | CLI binary, 3 providers, 9 tools, skills, MCP, safety |
 | **2 — platform-api** | ✅ | REST API, auth, persistence, WebSocket, skill sources |
-| **3 — platform-web** | ✅ | 13-page React app, industrial theme, live streaming |
+| **3 — platform-web** | ✅ | 14-page React app, industrial theme, live streaming |
 | **4 — Skills** | ✅ | 10 skills (4 WASM + 6 instruction), git-native registry |
 | **5 — Scheduler** | ✅ | Cron/interval/one-shot, overlap policies, timezone-aware |
 | **6 — Polish** | ✅ | Token counting, pagination, run filtering |
 | **7 — Orchestration** | ✅ | agent_spawn, parent/child runs, parallel sub-agents |
-| **8 — Hardening** | ✅ | Health checks, metrics, graceful shutdown, audit log |
+| **8 — Hardening** | ✅ | Health checks, Prometheus metrics, graceful shutdown, audit log |
 | **9 — Multi-User** | ✅ | Teams, RBAC, invitations, team-scoped resources |
-| **WASM Sandbox** | ✅ | Wazero runtime, HTTP host functions, capability security |
+| **WASM Sandbox** | ✅ | Wazero runtime, HTTP host functions, capability security, module caching |
+| **Container Sandbox** | ✅ | Docker/Podman, read-only root, resource limits, E2E tested |
+| **OAuth** | ✅ | GitHub + Google, avatar display, audit-logged |
+| **Audit** | ✅ | 18 action types, all handlers wired, paginated frontend |
+
+---
+
+## Diagrams
+
+All diagrams are generated from code (`node generate.js`) and exported to PNG (`node export-images.js`).
+
+| Diagram | Description |
+|---|---|
+| ![01](BLDER_DOCS/diagrams/01-system-architecture.png) | System architecture — all 5 repos |
+| ![02](BLDER_DOCS/diagrams/02-tool-execution-model.png) | Tool execution: native, WASM, container, MCP |
+| ![03](BLDER_DOCS/diagrams/03-agent-turn-loop.png) | Agent turn loop with tool dispatch |
+| ![04](BLDER_DOCS/diagrams/04-wasm-sandbox.png) | WASM sandbox: Wazero, host functions, capabilities |
+| ![05](BLDER_DOCS/diagrams/05-skill-loading.png) | Skill install + runtime loading flow |
+| ![06](BLDER_DOCS/diagrams/06-multi-repo.png) | Multi-repo dependency graph |
+
+Source: [`BLDER_DOCS/diagrams/generate.js`](BLDER_DOCS/diagrams/generate.js)
 
 ---
 
 ## Documentation
-
-All planning and architecture docs: [`BLDER_DOCS/`](BLDER_DOCS/)
 
 | Document | Description |
 |---|---|
@@ -180,11 +235,14 @@ All planning and architecture docs: [`BLDER_DOCS/`](BLDER_DOCS/)
 | [architecture/agent-core.md](BLDER_DOCS/architecture/agent-core.md) | Agent runtime design |
 | [architecture/skill-registry.md](BLDER_DOCS/architecture/skill-registry.md) | Skill discovery and execution |
 | [architecture/web-platform.md](BLDER_DOCS/architecture/web-platform.md) | Web portal design |
-| [architecture/data-model.md](BLDER_DOCS/architecture/data-model.md) | Database schema |
+| [architecture/data-model.md](BLDER_DOCS/architecture/data-model.md) | Database schema (13 tables) |
+| [architecture/scheduler.md](BLDER_DOCS/architecture/scheduler.md) | Scheduler design |
+| [architecture/orchestration.md](BLDER_DOCS/architecture/orchestration.md) | Multi-agent orchestration |
 | [agent-core-deep-dive.md](BLDER_DOCS/agent-core-deep-dive.md) | Full agent runtime reference |
 | [skill-registry-deep-dive.md](BLDER_DOCS/skill-registry-deep-dive.md) | Skill system deep dive + WASM migration |
-| [tools-deep-dive.md](BLDER_DOCS/tools-deep-dive.md) | Tool system: core, WASM, container, MCP |
-| [roadmap.md](BLDER_DOCS/roadmap.md) | Build plan |
+| [tools-deep-dive.md](BLDER_DOCS/tools-deep-dive.md) | Tool system: native, WASM, container, MCP |
+| [wasm-tool-guide.md](BLDER_DOCS/wasm-tool-guide.md) | How to write WASM tool skills |
+| [tech-stack.md](BLDER_DOCS/tech-stack.md) | Technology choices and rationale |
 
 ---
 

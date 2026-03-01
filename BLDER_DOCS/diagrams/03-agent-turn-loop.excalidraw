@@ -21,12 +21,12 @@
       "groupIds": [],
       "frameId": null,
       "roundness": null,
-      "seed": 537324,
+      "seed": 793650,
       "version": 1,
-      "versionNonce": 928710,
+      "versionNonce": 538953,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1772327459865,
+      "updated": 1772404605164,
       "link": null,
       "locked": false,
       "text": "Agent Turn Loop",
@@ -59,9 +59,9 @@
       "roundness": {
         "type": 3
       },
-      "seed": 667227,
+      "seed": 658768,
       "version": 1,
-      "versionNonce": 191781,
+      "versionNonce": 446873,
       "isDeleted": false,
       "boundElements": [
         {
@@ -69,7 +69,7 @@
           "type": "text"
         }
       ],
-      "updated": 1772327459865,
+      "updated": 1772404605164,
       "link": null,
       "locked": false
     },
@@ -91,12 +91,12 @@
       "groupIds": [],
       "frameId": null,
       "roundness": null,
-      "seed": 661917,
+      "seed": 51723,
       "version": 1,
-      "versionNonce": 773566,
+      "versionNonce": 808605,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1772327459865,
+      "updated": 1772404605164,
       "link": null,
       "locked": false,
       "text": "START\nReceive mission / user message",
@@ -129,9 +129,9 @@
       "roundness": {
         "type": 3
       },
-      "seed": 688077,
+      "seed": 714644,
       "version": 1,
-      "versionNonce": 394955,
+      "versionNonce": 804681,
       "isDeleted": false,
       "boundElements": [
         {
@@ -139,7 +139,7 @@
           "type": "text"
         }
       ],
-      "updated": 1772327459865,
+      "updated": 1772404605164,
       "link": null,
       "locked": false
     },
@@ -161,12 +161,12 @@
       "groupIds": [],
       "frameId": null,
       "roundness": null,
-      "seed": 333766,
+      "seed": 880085,
       "version": 1,
-      "versionNonce": 338497,
+      "versionNonce": 923961,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1772327459865,
+      "updated": 1772404605164,
       "link": null,
       "locked": false,
       "text": "Build context\n(system prompt + skills + history)",
@@ -199,9 +199,9 @@
       "roundness": {
         "type": 3
       },
-      "seed": 534585,
+      "seed": 624199,
       "version": 1,
-      "versionNonce": 236878,
+      "versionNonce": 183912,
       "isDeleted": false,
       "boundElements": [
         {
@@ -209,7 +209,7 @@
           "type": "text"
         }
       ],
-      "updated": 1772327459865,
+      "updated": 1772404605164,
       "link": null,
       "locked": false
     },
@@ -231,12 +231,12 @@
       "groupIds": [],
       "frameId": null,
       "roundness": null,
-      "seed": 203699,
+      "seed": 951656,
       "version": 1,
-      "versionNonce": 963647,
+      "versionNonce": 161737,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1772327459865,
+      "updated": 1772404605164,
       "link": null,
       "locked": false,
       "text": "LLM call\n(streaming response)",
@@ -267,9 +267,9 @@
       "groupIds": [],
       "frameId": null,
       "roundness": null,
-      "seed": 853242,
+      "seed": 703646,
       "version": 1,
-      "versionNonce": 353933,
+      "versionNonce": 132486,
       "isDeleted": false,
       "boundElements": [
         {
@@ -277,7 +277,7 @@
           "type": "text"
         }
       ],
-      "updated": 1772327459865,
+      "updated": 1772404605164,
       "link": null,
       "locked": false
     },
@@ -299,12 +299,12 @@
       "groupIds": [],
       "frameId": null,
       "roundness": null,
-      "seed": 861636,
+      "seed": 713434,
       "version": 1,
-      "versionNonce": 981879,
+      "versionNonce": 373108,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1772327459865,
+      "updated": 1772404605164,
       "link": null,
       "locked": false,
       "text": "Tool calls in response?",
@@ -337,9 +337,9 @@
       "roundness": {
         "type": 3
       },
-      "seed": 200847,
+      "seed": 477881,
       "version": 1,
-      "versionNonce": 991724,
+      "versionNonce": 278573,
       "isDeleted": false,
       "boundElements": [
         {
@@ -347,7 +347,7 @@
           "type": "text"
         }
       ],
-      "updated": 1772327459865,
+      "updated": 1772404605164,
       "link": null,
       "locked": false
     },
@@ -369,22 +369,22 @@
       "groupIds": [],
       "frameId": null,
       "roundness": null,
-      "seed": 748285,
+      "seed": 344854,
       "version": 1,
-      "versionNonce": 708102,
+      "versionNonce": 970442,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1772327459865,
+      "updated": 1772404605164,
       "link": null,
       "locked": false,
-      "text": "Execute tools\n(parallel, sandboxed)",
+      "text": "Execute tools\n(parallel · WASM / container / native)",
       "fontSize": 16,
       "fontFamily": 1,
       "textAlign": "center",
       "verticalAlign": "middle",
       "baseline": 16,
       "containerId": "el-10",
-      "originalText": "Execute tools\n(parallel, sandboxed)",
+      "originalText": "Execute tools\n(parallel · WASM / container / native)",
       "lineHeight": 1.25
     },
     {
@@ -405,9 +405,9 @@
       "groupIds": [],
       "frameId": null,
       "roundness": null,
-      "seed": 109253,
+      "seed": 476204,
       "version": 1,
-      "versionNonce": 572225,
+      "versionNonce": 282417,
       "isDeleted": false,
       "boundElements": [
         {
@@ -415,7 +415,7 @@
           "type": "text"
         }
       ],
-      "updated": 1772327459865,
+      "updated": 1772404605164,
       "link": null,
       "locked": false
     },
@@ -437,12 +437,12 @@
       "groupIds": [],
       "frameId": null,
       "roundness": null,
-      "seed": 408232,
+      "seed": 930797,
       "version": 1,
-      "versionNonce": 608073,
+      "versionNonce": 356863,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1772327459865,
+      "updated": 1772404605164,
       "link": null,
       "locked": false,
       "text": "Check limits\n(turns · tokens · loops)",
@@ -475,9 +475,9 @@
       "roundness": {
         "type": 3
       },
-      "seed": 41458,
+      "seed": 836684,
       "version": 1,
-      "versionNonce": 250032,
+      "versionNonce": 40007,
       "isDeleted": false,
       "boundElements": [
         {
@@ -485,7 +485,7 @@
           "type": "text"
         }
       ],
-      "updated": 1772327459865,
+      "updated": 1772404605165,
       "link": null,
       "locked": false
     },
@@ -507,12 +507,12 @@
       "groupIds": [],
       "frameId": null,
       "roundness": null,
-      "seed": 884843,
+      "seed": 99772,
       "version": 1,
-      "versionNonce": 824726,
+      "versionNonce": 312955,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1772327459865,
+      "updated": 1772404605165,
       "link": null,
       "locked": false,
       "text": "Compact history\n(LLM summarize)",
@@ -545,9 +545,9 @@
       "roundness": {
         "type": 3
       },
-      "seed": 248804,
+      "seed": 470347,
       "version": 1,
-      "versionNonce": 595101,
+      "versionNonce": 982006,
       "isDeleted": false,
       "boundElements": [
         {
@@ -555,7 +555,7 @@
           "type": "text"
         }
       ],
-      "updated": 1772327459865,
+      "updated": 1772404605165,
       "link": null,
       "locked": false
     },
@@ -577,12 +577,12 @@
       "groupIds": [],
       "frameId": null,
       "roundness": null,
-      "seed": 955153,
+      "seed": 57204,
       "version": 1,
-      "versionNonce": 909083,
+      "versionNonce": 335076,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1772327459865,
+      "updated": 1772404605165,
       "link": null,
       "locked": false,
       "text": "DONE\nEmit agent_end event",
@@ -615,12 +615,12 @@
       "roundness": {
         "type": 2
       },
-      "seed": 340091,
+      "seed": 117131,
       "version": 1,
-      "versionNonce": 676633,
+      "versionNonce": 41432,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1772327459865,
+      "updated": 1772404605165,
       "link": null,
       "locked": false,
       "points": [
@@ -659,12 +659,12 @@
       "roundness": {
         "type": 2
       },
-      "seed": 693846,
+      "seed": 224912,
       "version": 1,
-      "versionNonce": 527393,
+      "versionNonce": 960990,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1772327459865,
+      "updated": 1772404605165,
       "link": null,
       "locked": false,
       "points": [
@@ -703,12 +703,12 @@
       "roundness": {
         "type": 2
       },
-      "seed": 17482,
+      "seed": 342715,
       "version": 1,
-      "versionNonce": 385695,
+      "versionNonce": 646098,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1772327459865,
+      "updated": 1772404605165,
       "link": null,
       "locked": false,
       "points": [
@@ -747,12 +747,12 @@
       "roundness": {
         "type": 2
       },
-      "seed": 366188,
+      "seed": 2660,
       "version": 1,
-      "versionNonce": 432109,
+      "versionNonce": 165222,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1772327459865,
+      "updated": 1772404605165,
       "link": null,
       "locked": false,
       "points": [
@@ -789,12 +789,12 @@
       "groupIds": [],
       "frameId": null,
       "roundness": null,
-      "seed": 795825,
+      "seed": 589476,
       "version": 1,
-      "versionNonce": 709700,
+      "versionNonce": 853504,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1772327459865,
+      "updated": 1772404605165,
       "link": null,
       "locked": false,
       "text": "Yes",
@@ -827,12 +827,12 @@
       "roundness": {
         "type": 2
       },
-      "seed": 782257,
+      "seed": 100682,
       "version": 1,
-      "versionNonce": 577098,
+      "versionNonce": 74098,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1772327459865,
+      "updated": 1772404605165,
       "link": null,
       "locked": false,
       "points": [
@@ -871,12 +871,12 @@
       "roundness": {
         "type": 2
       },
-      "seed": 277491,
+      "seed": 697940,
       "version": 1,
-      "versionNonce": 139707,
+      "versionNonce": 379802,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1772327459865,
+      "updated": 1772404605165,
       "link": null,
       "locked": false,
       "points": [
@@ -913,12 +913,12 @@
       "groupIds": [],
       "frameId": null,
       "roundness": null,
-      "seed": 585010,
+      "seed": 747191,
       "version": 1,
-      "versionNonce": 301642,
+      "versionNonce": 25671,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1772327459865,
+      "updated": 1772404605165,
       "link": null,
       "locked": false,
       "text": "No",
@@ -951,12 +951,12 @@
       "roundness": {
         "type": 2
       },
-      "seed": 162512,
+      "seed": 391761,
       "version": 1,
-      "versionNonce": 401232,
+      "versionNonce": 954445,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1772327459865,
+      "updated": 1772404605165,
       "link": null,
       "locked": false,
       "points": [
@@ -993,12 +993,12 @@
       "groupIds": [],
       "frameId": null,
       "roundness": null,
-      "seed": 177549,
+      "seed": 23904,
       "version": 1,
-      "versionNonce": 964072,
+      "versionNonce": 156988,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1772327459865,
+      "updated": 1772404605165,
       "link": null,
       "locked": false,
       "text": "context full",
@@ -1031,12 +1031,12 @@
       "roundness": {
         "type": 2
       },
-      "seed": 128486,
+      "seed": 162317,
       "version": 1,
-      "versionNonce": 269824,
+      "versionNonce": 489993,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1772327459865,
+      "updated": 1772404605165,
       "link": null,
       "locked": false,
       "points": [
@@ -1073,12 +1073,12 @@
       "groupIds": [],
       "frameId": null,
       "roundness": null,
-      "seed": 385570,
+      "seed": 333954,
       "version": 1,
-      "versionNonce": 316542,
+      "versionNonce": 651379,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1772327459865,
+      "updated": 1772404605165,
       "link": null,
       "locked": false,
       "text": "retry",
@@ -1111,12 +1111,12 @@
       "roundness": {
         "type": 2
       },
-      "seed": 653572,
+      "seed": 32350,
       "version": 1,
-      "versionNonce": 770896,
+      "versionNonce": 215400,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1772327459865,
+      "updated": 1772404605165,
       "link": null,
       "locked": false,
       "points": [
@@ -1153,12 +1153,12 @@
       "groupIds": [],
       "frameId": null,
       "roundness": null,
-      "seed": 913110,
+      "seed": 108561,
       "version": 1,
-      "versionNonce": 265839,
+      "versionNonce": 788277,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1772327459865,
+      "updated": 1772404605165,
       "link": null,
       "locked": false,
       "text": "ok / max turns",
@@ -1191,12 +1191,12 @@
       "roundness": {
         "type": 2
       },
-      "seed": 679152,
+      "seed": 146033,
       "version": 1,
-      "versionNonce": 793224,
+      "versionNonce": 690081,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1772327459865,
+      "updated": 1772404605165,
       "link": null,
       "locked": false,
       "points": [
@@ -1233,12 +1233,12 @@
       "groupIds": [],
       "frameId": null,
       "roundness": null,
-      "seed": 46583,
+      "seed": 457165,
       "version": 1,
-      "versionNonce": 189832,
+      "versionNonce": 294452,
       "isDeleted": false,
       "boundElements": [],
-      "updated": 1772327459865,
+      "updated": 1772404605165,
       "link": null,
       "locked": false,
       "text": "append results",
