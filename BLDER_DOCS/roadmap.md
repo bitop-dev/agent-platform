@@ -337,16 +337,53 @@ Platform runs 20+ concurrent agents reliably with no run loss on restart.
 
 ---
 
-## Phase 8 — Multi-User & Teams (Future)
+## Phase 8 — Multi-User & Teams ✅ (COMPLETE)
 **Goal**: Multiple users can share a platform instance with proper isolation.
 
 ### Deliverables
-- [ ] Team model + membership roles (Admin, Editor, Viewer)
-- [ ] Resource scoping (agents/skills/jobs belong to team)
-- [ ] OAuth login (GitHub, Google)
-- [ ] Usage billing tracking per team
-- [ ] Team invitation workflow
-- [ ] Community skill registry (hosted index)
+- [x] Team model + membership roles (Admin, Editor, Viewer)
+- [x] Resource scoping (agents/skills/runs belong to team)
+- [x] OAuth login (GitHub, Google)
+- [x] Team invitation workflow
+- [ ] Usage billing tracking per team (future)
+- [x] Community skill registry (hosted index)
+
+---
+
+## Phase 9 — Skill Credentials ✅ (COMPLETE)
+**Goal**: Users can store encrypted API keys/tokens for skills that require authentication (GitHub, Slack, etc.).
+
+### Deliverables
+- [x] `user_credentials` table with AES-256-GCM encryption
+- [x] CRUD endpoints (`POST/GET/PUT/DELETE /api/v1/credentials`)
+- [x] Runner injects decrypted credentials as EnvVars into WASM/container sandbox
+- [x] Frontend: Credentials page with quick-add cards, LED status indicators
+- [x] Audit actions: `credential.create`, `credential.delete`
+
+---
+
+## Phase 10 — AI Teams (Workflows) ✅ (COMPLETE)
+**Goal**: Multi-agent workflows where agents chain together — each step's output feeds the next.
+
+### Deliverables
+- [x] 4 new tables: `workflows`, `workflow_steps`, `workflow_runs`, `workflow_step_runs`
+- [x] DAG-based orchestrator engine with dependency resolution
+- [x] Mission template substitution: `{{input}}`, `{{steps.NAME.output}}`
+- [x] Parallel execution for independent steps
+- [x] 8 API endpoints for workflow CRUD + execution
+- [x] Frontend: Workflow builder, step dependencies, live run status
+- [x] Audit actions: `workflow.create`, `workflow.delete`, `workflow.run`
+
+---
+
+## Phase 11 — CI/CD ✅ (COMPLETE)
+**Goal**: Automated build/test/lint on every push and PR.
+
+### Deliverables
+- [x] agent-core: Go build + test + vet + golangci-lint
+- [x] platform-api: Go build + test + vet + lint + sqlc sync check + Docker build
+- [x] platform-web: Bun install + TypeScript type check + Vite build + Docker build
+- [x] platform-skills: registry.json validation + SKILL.md presence check
 
 ---
 
@@ -363,7 +400,10 @@ Platform runs 20+ concurrent agents reliably with no run loss on restart.
 | 6 — Skill Library | `skills` | 14–15 | 15+ real-world skills |
 | 7 — Orchestration | all repos | 16–18 | Multi-agent workflows |
 | 8 — Hardening | all repos | 19–20 | Production ready |
-| 9 — Multi-user | all repos | Future | Teams & sharing |
+| 9 — Multi-User & Teams | all repos | ✅ | Teams, RBAC, OAuth |
+| 10 — Skill Credentials | `platform-api` + `platform-web` | ✅ | Per-user encrypted secrets |
+| 11 — AI Teams (Workflows) | `platform-api` + `platform-web` | ✅ | Multi-agent DAG pipelines |
+| 12 — CI/CD | all repos | ✅ | GitHub Actions on all 4 repos |
 
 ---
 
