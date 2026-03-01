@@ -2,7 +2,7 @@
 
 An AI agent platform for building, running, and managing autonomous AI agents. Create agents with custom personas and skills, run them from the CLI or browser, stream output in real time, and manage everything through a web portal.
 
-> **Status**: Phases 0–4 complete. Standalone agent binary, Go API server, React web portal, and community skill registry all operational. 133 tests passing across repos.
+> **Status**: All 9 phases complete + WASM sandbox system. Standalone agent binary, Go API server, React web portal, and community skill registry all operational. 150+ tests passing across repos.
 
 ---
 
@@ -10,10 +10,10 @@ An AI agent platform for building, running, and managing autonomous AI agents. C
 
 | Repository | Language | Description | Status |
 |---|---|---|---|
-| [**agent-core**](https://github.com/bitop-dev/agent-core) | Go | Standalone CLI binary + `pkg/agent` library | ✅ 84 files, 11K lines, 111 tests, 26 commits |
-| [**agent-platform-api**](https://github.com/bitop-dev/agent-platform-api) | Go | REST API server with auth, persistence, WebSocket | ✅ 62 files, 5.5K lines, 22 tests, 11 commits |
-| [**agent-platform-web**](https://github.com/bitop-dev/agent-platform-web) | TypeScript | Bun + Vite + React web portal | ✅ 45 files, ~3K lines, 11 pages, 6 commits |
-| [**agent-platform-skills**](https://github.com/bitop-dev/agent-platform-skills) | Python/Bash | Community skill registry (git-native) | ✅ 31 files, 5 skills, 2 commits |
+| [**agent-core**](https://github.com/bitop-dev/agent-core) | Go | Standalone CLI binary + `pkg/agent` library | ✅ 100+ files, 15K lines, 130+ tests |
+| [**agent-platform-api**](https://github.com/bitop-dev/agent-platform-api) | Go | REST API server with auth, persistence, WebSocket | ✅ 90 handlers, 22 tests |
+| [**agent-platform-web**](https://github.com/bitop-dev/agent-platform-web) | TypeScript | Bun + Vite + React web portal | ✅ 13 pages, industrial theme |
+| [**agent-platform-skills**](https://github.com/bitop-dev/agent-platform-skills) | Go → WASM | Community skill registry (git-native) | ✅ 10 skills (4 WASM + 6 instruction) |
 | [**agent-platform-docs**](https://github.com/bitop-dev/agent-platform-docs) (this repo) | Markdown | Architecture, design docs, planning | ✅ Comprehensive |
 
 ---
@@ -22,14 +22,14 @@ An AI agent platform for building, running, and managing autonomous AI agents. C
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│              platform-web (Bun + Vite + React)              │
-│          Dashboard · Agents · Runs · Skills · Keys          │
+│          platform-web (Bun + Vite + React)                  │
+│    Dashboard · Agents · Runs · Skills · Teams · Keys        │
 └────────────────────────────┬────────────────────────────────┘
                              │ REST + WebSocket
 ┌────────────────────────────▼────────────────────────────────┐
-│                   platform-api (Go/Fiber)                   │
-│   JWT Auth · Agent CRUD · Runs · Skills · API Key Mgmt     │
-│   Rate Limiting · WebSocket Hub · Registry Sync             │
+│                platform-api (Go/Fiber)                      │
+│  JWT Auth · Agent CRUD · Runs · Skills · Schedules · Teams  │
+│  WebSocket Hub · Registry Sync · Health/Metrics             │
 └──────┬────────────────────────────┬─────────────────────────┘
        │ imports pkg/agent          │ syncs registry.json
 ┌──────▼──────────────┐    ┌───────▼──────────────────┐
@@ -37,70 +37,83 @@ An AI agent platform for building, running, and managing autonomous AI agents. C
 │    (Go binary)      │    │                           │
 │                     │    │  bitop-dev/skills (default)│
 │  · 3 LLM Providers  │    │  mycorp/skills (custom)   │
-│  · 8 Core Tools     │    │  anyone/skills (community)│
-│  · Skill Loader     │    └───────────────────────────┘
+│  · 9 Core Tools     │    │  anyone/skills (community)│
+│  · WASM Sandbox     │    └───────────────────────────┘
+│  · Skill Loader     │
 │  · MCP Client       │
 │  · Context Mgmt     │
-└──────┬──────────────┘
-       │
-┌──────▼──────────────────────────────────────────────────────┐
-│                    LLM Providers                            │
-│     OpenAI · Anthropic · Ollama · OpenAI-compatible         │
-└─────────────────────────────────────────────────────────────┘
+└─────────────────────┘
 ```
 
-### Dependency Rules
+### Tool Execution Model
 
-- **`platform-web`** talks to `platform-api` over HTTP/WebSocket only
-- **`platform-api`** imports `agent-core/pkg/agent` as a Go library
-- **`agent-core`** works standalone — never imports the platform
-- **`skills`** is a data repo — no code deps, agent-core reads at install/load time
+```
+Tool Executor
+├── native      — 9 built-in Go tools (bash, read_file, agent_spawn, etc.)
+├── wasm        — .wasm modules via Wazero (skill tools, sandboxed)
+├── container   — Docker/Podman OCI containers (full isolation)
+├── mcp         — MCP server protocol (external tool servers)
+└── subprocess  — legacy raw scripts (dev/backward compat)
+```
+
+All community skill tools are compiled to **WebAssembly** and run inside Wazero's sandbox:
+- **Zero external dependencies** — no Python, no pip, no CLI tools to install
+- **Capability-based security** — tools can only access granted filesystem paths and network hosts
+- **Portable** — .wasm runs on any OS where agent-core runs
 
 ---
 
 ## What's Built
 
-### agent-core (Phases 0–1 + 4) ✅
+### agent-core ✅
 
-Standalone CLI binary that runs AI agents with tool calling, skill loading, and safety features.
+Standalone CLI binary that runs AI agents with tool calling, WASM-sandboxed skills, and safety features.
 
 - **3 LLM providers**: OpenAI Chat Completions, Anthropic Messages, OpenAI Responses
-- **8 core tools**: `bash` (opt-out), `read_file`, `write_file`, `edit_file`, `list_dir`, `grep`, `http_fetch`, `tasks`
-- **Skill system**: install from GitHub registries, auto-install on run, SKILL.md parsing
-- **Skill CLI**: `skill search`, `skill install`, `skill remove`, `skill update`, `skill list`, `skill show`
+- **9 core tools**: `bash` (opt-out), `read_file`, `write_file`, `edit_file`, `list_dir`, `grep`, `http_fetch`, `tasks`, `agent_spawn`
+- **WASM sandbox**: Wazero runtime with HTTP host functions, capability-based filesystem + network security
+- **Container sandbox**: Docker/Podman support for full OS-level isolation
+- **Skill system**: install from GitHub registries, auto-install on run, WASM + subprocess dispatch
 - **MCP support**: stdio + HTTP transports for external tool servers
 - **ReliableProvider**: 3-level failover, exponential backoff, API key rotation
 - **Context compaction**: proactive + reactive LLM-summarize with tool boundary guard
 - **Safety**: loop detection, credential scrubbing, approval manager, heartbeat, deferred-action detection
-- **Session persistence**: JSONL format, save/load/resume
 - **`pkg/agent` public API**: Builder pattern for embedding in other Go programs
 
-### agent-platform-api (Phases 2 + 4) ✅
+### agent-platform-api ✅
 
 Go REST API server wrapping agent-core with persistence, auth, and real-time streaming.
 
-- **30+ REST endpoints** with JWT auth, rate limiting, request IDs
-- **Multi-source skill registry**: syncs from GitHub on startup, users add custom repos
+- **90 REST endpoints** with JWT auth, rate limiting, request IDs
 - **Run execution**: async goroutine pool, WebSocket live streaming
+- **Scheduling**: cron/interval/one-shot with overlap policies
+- **Teams**: RBAC (owner/admin/member/viewer), invitations
 - **API key management**: AES-256-GCM encryption at rest
-- **SQLite** (dev) / **PostgreSQL** (prod) with goose migrations and sqlc queries
+- **Health**: `/healthz`, `/readyz`, `/metrics` endpoints
+- **Graceful shutdown**: drain scheduler → drain runner → timeout
 
-### agent-platform-web (Phases 3 + 4) ✅
+### agent-platform-web ✅
 
-React SPA for full agent management.
+React SPA with "AgentOps Command Center" industrial theme.
 
-- **11 pages**: dashboard, agents (CRUD), runs (list + live monitor), skills (browse + sources), API keys
-- **Run monitor**: live streaming output + collapsed event timeline + stop button
-- **Skill Hub**: browse skills from all sources, add custom GitHub repos
-- **Tech**: Bun, Vite 7, React 19, Tailwind v4, shadcn/ui, React Query, Zustand
+- **13 pages**: dashboard, agents, runs, run detail, skills, teams, schedules, API keys, login/register
+- **Industrial design**: dark charcoal + amber/gold, LED indicators, scan-line overlays, JetBrains Mono
+- **Live streaming**: WebSocket run output with collapsed event timeline
+- **Tech**: Bun, Vite, React 19, Tailwind v4, shadcn/ui, React Query, Zustand
 
-### agent-platform-skills (Phase 4) ✅
+### agent-platform-skills ✅
 
-Git-native community skill registry.
+Git-native community skill registry with WASM-sandboxed tools.
 
-- **5 skills**: web_search (DuckDuckGo), web_fetch (HTML→markdown), github (gh CLI), summarize, report
-- **Contract**: any GitHub repo with `registry.json` + `skills/` directory is a valid source
-- **Tested end-to-end**: agent-core installs skills, runs them with real LLM + real tools
+**Tool skills (WASM):**
+| Skill | Description | Network |
+|---|---|---|
+| 🔍 `web_search` | DuckDuckGo search | `html.duckduckgo.com` |
+| 🌐 `web_fetch` | Fetch URL → markdown | Target host |
+| 🐙 `github` | GitHub issues & PRs | `api.github.com` |
+| 💬 `slack_notify` | Slack webhook POST | `hooks.slack.com` |
+
+**Instruction-only skills:** `summarize`, `report`, `code_review`, `data_extract`, `write_doc`, `debug_assist`
 
 ---
 
@@ -109,14 +122,14 @@ Git-native community skill registry.
 ### Option A: Standalone CLI
 
 ```bash
-cd agent-core && make build
+cd agent-core && go build -o bin/agent-core ./cmd/agent-core/
 export OPENAI_API_KEY=sk-...
 
 # Install skills
 ./bin/agent-core skill install web_search
 ./bin/agent-core skill install summarize
 
-# Run with skills
+# Run — WASM sandbox auto-initializes
 ./bin/agent-core run -c examples/research-agent.yaml \
   --mission "Search for Go 1.24 changes and summarize"
 ```
@@ -126,7 +139,8 @@ export OPENAI_API_KEY=sk-...
 ```bash
 # 1. Start API
 cd agent-platform-api
-PORT=8090 JWT_SECRET=dev-secret-change-me-32chars-min DATABASE_URL=sqlite://data/platform.db go run ./cmd/api
+PORT=8090 JWT_SECRET=dev-secret-change-me-32chars-min \
+  DATABASE_URL=sqlite://data/platform.db go run ./cmd/api
 
 # 2. Start Web
 cd agent-platform-web
@@ -134,27 +148,25 @@ echo "VITE_API_URL=http://localhost:8090" > .env
 bun install && bun run dev --port 3002
 
 # 3. Open http://localhost:3002
-# Register → Store API Key → Create Agent → Run → Watch live output
 ```
 
 ---
 
-## Build Roadmap
+## Build Phases
 
 | Phase | Status | What |
 |---|---|---|
-| **0 — Core Runtime** | ✅ Done | Agent runs from CLI, streams to terminal |
-| **1 — Tools + Skills** | ✅ Done | 8 tools, skill loader, MCP, safety features |
-| **2 — Platform API** | ✅ Done | REST API, auth, persistence, WebSocket |
-| **3 — Web Portal** | ✅ Done | 11-page React app, live run streaming |
-| **4 — Skill Hub** | ✅ Done | Skills repo, multi-source registry, skill install CLI, UI |
-| **5 — Scheduler** | 🔜 Next | Cron-based agent scheduling |
-| **6 — Skill Library** | Planned | 15+ production skills |
-| **7 — Orchestration** | Planned | Multi-agent workflows |
-| **8 — Hardening** | Planned | Containers, metrics, failover |
-| **9 — Multi-User** | Future | Teams, OAuth, billing |
-
-Detailed roadmap: [BLDER_DOCS/roadmap.md](BLDER_DOCS/roadmap.md)
+| **0 — Planning** | ✅ | Architecture docs, deep dives, diagrams |
+| **1 — agent-core** | ✅ | CLI binary, 3 providers, 9 tools, skills, MCP, safety |
+| **2 — platform-api** | ✅ | REST API, auth, persistence, WebSocket, skill sources |
+| **3 — platform-web** | ✅ | 13-page React app, industrial theme, live streaming |
+| **4 — Skills** | ✅ | 10 skills (4 WASM + 6 instruction), git-native registry |
+| **5 — Scheduler** | ✅ | Cron/interval/one-shot, overlap policies, timezone-aware |
+| **6 — Polish** | ✅ | Token counting, pagination, run filtering |
+| **7 — Orchestration** | ✅ | agent_spawn, parent/child runs, parallel sub-agents |
+| **8 — Hardening** | ✅ | Health checks, metrics, graceful shutdown, audit log |
+| **9 — Multi-User** | ✅ | Teams, RBAC, invitations, team-scoped resources |
+| **WASM Sandbox** | ✅ | Wazero runtime, HTTP host functions, capability security |
 
 ---
 
@@ -169,10 +181,10 @@ All planning and architecture docs: [`BLDER_DOCS/`](BLDER_DOCS/)
 | [architecture/skill-registry.md](BLDER_DOCS/architecture/skill-registry.md) | Skill discovery and execution |
 | [architecture/web-platform.md](BLDER_DOCS/architecture/web-platform.md) | Web portal design |
 | [architecture/data-model.md](BLDER_DOCS/architecture/data-model.md) | Database schema |
-| [agent-core-deep-dive.md](BLDER_DOCS/agent-core-deep-dive.md) | 920+ lines — code samples, YAML config |
-| [skill-registry-deep-dive.md](BLDER_DOCS/skill-registry-deep-dive.md) | 800+ lines — gap analysis, testing spec |
-| [tools-deep-dive.md](BLDER_DOCS/tools-deep-dive.md) | Three-tier tool system design |
-| [roadmap.md](BLDER_DOCS/roadmap.md) | 9-phase build plan |
+| [agent-core-deep-dive.md](BLDER_DOCS/agent-core-deep-dive.md) | Full agent runtime reference |
+| [skill-registry-deep-dive.md](BLDER_DOCS/skill-registry-deep-dive.md) | Skill system deep dive + WASM migration |
+| [tools-deep-dive.md](BLDER_DOCS/tools-deep-dive.md) | Tool system: core, WASM, container, MCP |
+| [roadmap.md](BLDER_DOCS/roadmap.md) | Build plan |
 
 ---
 

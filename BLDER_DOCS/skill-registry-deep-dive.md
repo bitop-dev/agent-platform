@@ -894,3 +894,55 @@ The existing `architecture/skill-registry.md` had several things right. These ar
 - Community install from Git URL ✓
 - Version pinning concept ✓
 - The registry is its own repo ✓
+
+---
+
+## WASM Migration (v2.0)
+
+As of v2.0, all community skill tools have been migrated from subprocess (Python/shell) to **WebAssembly**. This section documents the rationale and impact.
+
+### The Problem
+
+The original subprocess model had a fundamental flaw: **installing a skill didn't install its dependencies**.
+
+- `web_search` needed `python3` + `duckduckgo-search` pip package
+- `web_fetch` needed `python3` + `beautifulsoup4` + `readability-lxml`
+- `github` needed `gh` CLI installed and authenticated
+- `slack_notify` needed `python3`
+
+`InstallSkill` cloned the skill files from git but never ran `pip install`. Users would install a skill, try to use it, and get `ModuleNotFoundError`.
+
+### The Solution
+
+Compile tools to WebAssembly. The `.wasm` file **is** the dependency.
+
+| Skill | Before (subprocess) | After (WASM) |
+|---|---|---|
+| `web_search` | python3 + duckduckgo-search | web_search.wasm (3.4MB) |
+| `web_fetch` | python3 + beautifulsoup4 | web_fetch.wasm (3.8MB) |
+| `github` | gh CLI + python3 + shell | gh_issues.wasm + gh_prs.wasm (3.2MB each) |
+| `slack_notify` | python3 | slack_notify.wasm (3.2MB) |
+
+### How WASM Tools Work
+
+1. Tool source is written in Go (could also be Rust, C, Zig — anything that compiles to WASM)
+2. Compiled with `GOOS=wasip1 GOARCH=wasm go build -o tool.wasm .`
+3. Shipped as a `.wasm` file in the skill's `tools/` directory
+4. At runtime, Wazero (pure Go, no CGO) loads and executes the module
+5. HTTP access provided through `agent_host.http_request` host function
+6. Host enforces `AllowedHosts` from the agent's sandbox config
+
+### What Changed in the Registry
+
+- `registry.json` entries now have `"runtime": "wasm"` and `"requires_bins": []`
+- SKILL.md frontmatter includes `runtime: wasm`
+- No more `requires: bins: [python3]` or `requires: bins: [gh]`
+- No more `requirements.txt` files
+
+### What Didn't Change
+
+- SKILL.md format is the same (frontmatter + markdown body)
+- Tool schemas (`tools/*.json`) are the same
+- Instruction-only skills are unchanged
+- The subprocess protocol (stdin JSON → stdout JSON) is preserved — WASM tools use the same protocol
+- `agent-core skill install/list/show/update/remove` all work the same way

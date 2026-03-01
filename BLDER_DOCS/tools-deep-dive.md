@@ -6,15 +6,18 @@ This document covers the three-tier tool system, the built-in tool set, how skil
 
 ---
 
-## Three Categories of Tools
+## Four Categories of Tools
 
-| Category | Implemented in | Distributed via | Runtime cost |
-|---|---|---|---|
-| **Core tools** | Go (compiled in) | agent-core binary | In-process |
-| **Skill tools** | Any language | Skill packages | Subprocess |
-| **MCP tools** | Any language | MCP servers | RPC (stdio or HTTP/SSE) |
+| Category | Implemented in | Distributed via | Runtime | Sandboxing |
+|---|---|---|---|---|
+| **Core tools** | Go (compiled in) | agent-core binary | In-process | Path-based |
+| **WASM skill tools** | Go/Rust/C (compiled to .wasm) | Skill packages | Wazero | Capability-based (fs + network) |
+| **Container skill tools** | Any language | OCI images | Docker/Podman | Full OS-level |
+| **MCP tools** | Any language | MCP servers | RPC (stdio or HTTP/SSE) | Server-side |
 
 These all implement the same `Tool` interface from the agent's perspective. The LLM sees a flat list of available tools — it doesn't know or care which category they came from.
+
+> **Note**: As of v2.0, all community skill tools have been migrated from Python/shell subprocess to WASM. The subprocess runtime is still supported for development/legacy use but is not the recommended path for new skills.
 
 ---
 
@@ -362,6 +365,141 @@ requires:
 ```
 
 agent-core passes *only* those declared vars into the subprocess. The LLM's conversation history (which might contain sensitive user data) never appears in the subprocess environment.
+
+---
+
+## WASM Sandbox (Recommended for Skills)
+
+As of v2.0, all community skill tools have been migrated from subprocess (Python/shell) to **WebAssembly (WASM)**, executed via Wazero inside agent-core. This eliminates all external dependency issues.
+
+### Why WASM?
+
+| Problem (subprocess) | Solution (WASM) |
+|---|---|
+| `pip install` fails, wrong Python version | .wasm file is the complete tool — no runtime needed |
+| `gh` CLI not installed | Tool calls GitHub REST API directly via host function |
+| Shell scripts break across OS | .wasm runs anywhere agent-core runs |
+| No sandboxing — tool can read any file, hit any URL | Capability-gated: only allowed paths + hosts |
+| Dependency conflicts between skills | Each .wasm is self-contained |
+
+### Architecture
+
+```
+┌─────────────────────────────────────────┐
+│  agent-core (Go)                        │
+│                                         │
+│  ┌──────────┐   ┌────────────────────┐  │
+│  │ Tool      │   │ Sandbox Registry   │  │
+│  │ Engine    │──▶│  ├─ WASM Runtime   │  │
+│  │           │   │  ├─ Container RT   │  │
+│  │           │   │  └─ Subprocess RT  │  │
+│  └──────────┘   └────────────────────┘  │
+│        │                  │              │
+│        ▼                  ▼              │
+│  ┌──────────┐   ┌────────────────────┐  │
+│  │ Sandboxed │   │ Wazero Engine      │  │
+│  │ Tool      │──▶│  ├─ WASI          │  │
+│  │           │   │  ├─ agent_host     │  │
+│  │           │   │  │   └─ http_req   │  │
+│  │           │   │  └─ Capabilities   │  │
+│  └──────────┘   └────────────────────┘  │
+└─────────────────────────────────────────┘
+```
+
+### Host Functions
+
+WASM modules can't make network requests directly. Instead, agent-core provides the `agent_host` module with host functions:
+
+| Function | Signature | Description |
+|---|---|---|
+| `http_request` | `(method, url, body, resp_buf) → bytes_written` | HTTP GET/POST through the host |
+
+The host enforces `AllowedHosts` before making any request:
+
+```
+WASM calls: http_request("GET", "https://api.github.com/repos/org/repo/issues", ...)
+Host checks: is "api.github.com" in AllowedHosts?
+  ├─ Yes → make request, write response to WASM memory
+  └─ No  → return -3 (host denied)
+```
+
+### Capability Model
+
+Each tool invocation is sandboxed by a `Capabilities` struct:
+
+```go
+type Capabilities struct {
+    AllowedPaths   []string           // Host dirs tool can read/write
+    ReadOnlyPaths  []string           // Host dirs mounted read-only
+    AllowedHosts   []string           // Network hosts tool can reach
+    EnvVars        map[string]string  // Environment variables
+    MaxMemoryMB    int                // Memory cap (default 256MB)
+    MaxTimeoutSec  int                // Execution timeout (default 60s)
+    MaxOutputBytes int                // Output cap (default 1MB)
+}
+```
+
+Agent YAML configures this:
+
+```yaml
+sandbox:
+  mode: wasm
+  allowed_hosts:
+    - html.duckduckgo.com
+    - api.github.com
+    - hooks.slack.com
+  allowed_paths:
+    - /home/user/project
+  max_timeout_sec: 30
+```
+
+### Writing a WASM Tool
+
+Tools are written in Go and compiled to WASM:
+
+```go
+package main
+
+import (
+    "encoding/json"
+    "io"
+    "os"
+    "github.com/bitop-dev/agent-core/internal/sandbox/testdata/hostcall"
+)
+
+func main() {
+    input, _ := io.ReadAll(os.Stdin)  // read JSON from stdin
+    
+    // Parse arguments...
+    
+    // Make HTTP request through host function (sandboxed)
+    body, err := hostcall.HTTPGet("https://api.example.com/data")
+    
+    // Write JSON result to stdout
+    json.NewEncoder(os.Stdout).Encode(map[string]any{
+        "content":  string(body),
+        "is_error": false,
+    })
+}
+```
+
+Build: `GOOS=wasip1 GOARCH=wasm go build -o my_tool.wasm .`
+
+The resulting .wasm file is the complete tool. Ship it in the skill's `tools/` directory.
+
+### Runtime Detection
+
+Skills declare their runtime in SKILL.md frontmatter:
+
+```yaml
+runtime: wasm       # explicit
+```
+
+If not declared, agent-core auto-detects:
+1. `.wasm` files in `tools/` → `runtime: wasm`
+2. `Dockerfile` in skill dir → `runtime: container`
+3. `.py`, `.sh` files in `tools/` → `runtime: subprocess`
+4. No `tools/` directory → instruction-only skill
 
 ---
 
