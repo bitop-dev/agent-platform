@@ -267,6 +267,7 @@ Compiled into the binary. Zero install, zero subprocess overhead. Always availab
 | `list_dir` | List directory contents with metadata | On |
 | `grep` | Regex search with context lines | On |
 | `http_fetch` | Raw HTTP GET/POST requests | On |
+| `tasks` | Session-scoped task checklist for tracking multi-step work | On |
 
 ### Skill Tools (Subprocess)
 

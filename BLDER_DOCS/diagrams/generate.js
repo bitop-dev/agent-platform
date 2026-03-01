@@ -280,7 +280,7 @@ function diagramToolTiers() {
   all.push(...label({ x: 80, y: 350, w: 220, text: "① Core Tools", fontSize: 15, color: "#7048e8", bold: true }).elements);
   all.push(...label({ x: 80, y: 378, w: 220, text: "bash  (opt-out)", fontSize: 12, color: "#495057" }).elements);
   all.push(...label({ x: 80, y: 398, w: 220, text: "read_file · write_file · edit_file", fontSize: 12, color: "#495057" }).elements);
-  all.push(...label({ x: 80, y: 418, w: 220, text: "list_dir · grep · http_fetch", fontSize: 12, color: "#495057" }).elements);
+  all.push(...label({ x: 80, y: 418, w: 220, text: "list_dir · grep · http_fetch · tasks", fontSize: 12, color: "#495057" }).elements);
   all.push(...label({ x: 80, y: 448, w: 220, text: "Compiled into binary.", fontSize: 11, color: "#7048e8" }).elements);
   all.push(...label({ x: 80, y: 466, w: 220, text: "In-process. Always available.", fontSize: 11, color: "#7048e8" }).elements);
   all.push(...label({ x: 80, y: 486, w: 220, text: "No install needed.", fontSize: 11, color: "#7048e8" }).elements);

@@ -31,7 +31,7 @@ Each phase is labeled with the repo(s) it primarily lives in. See [repository-st
 
 ### Deliverables
 - [ ] `Tool` interface + `ToolEngine` with parallel execution
-- [ ] Built-in tools: `bash` (opt-out), `read_file`, `write_file`, `edit_file`, `list_dir`, `grep`, `http_fetch`
+- [ ] Built-in tools: `bash` (opt-out), `read_file`, `write_file`, `edit_file`, `list_dir`, `grep`, `http_fetch`, `tasks`
 - [ ] Subprocess tool runner (external tools via stdin/stdout JSON)
 - [ ] Tool sandboxing: path scope, network allowlist, timeout
 - [ ] Tool calling in the turn loop (native + prompt-guided fallback)
@@ -136,7 +136,7 @@ An agent fires automatically on `0 9 * * 1` (Monday 9am) and POSTs its output to
 | **Monitoring** | `healthcheck`, `uptime_check`, `log_reader` |
 | **AI** | `image_gen`, `transcribe` |
 
-Core tools (`bash`, `read_file`, `write_file`, `edit_file`, `list_dir`, `grep`, `http_fetch`) are built into the binary — not skills.
+Core tools (`bash`, `read_file`, `write_file`, `edit_file`, `list_dir`, `grep`, `http_fetch`, `tasks`) are built into the binary — not skills.
 
 ### Deliverables
 - [ ] 15+ skills in the `skills` repo

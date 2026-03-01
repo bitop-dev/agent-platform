@@ -717,7 +717,8 @@ agent-core/
 │   │   │   ├── edit_file.go   # edit_file — exact text replacement
 │   │   │   ├── list_dir.go    # list_dir — name, type, size, modified
 │   │   │   ├── grep.go        # grep — regex with context lines
-│   │   │   └── http_fetch.go  # http_fetch — raw GET/POST, allowed_hosts
+│   │   │   ├── http_fetch.go  # http_fetch — raw GET/POST, allowed_hosts
+│   │   │   └── tasks.go       # tasks — session-scoped task checklist
 │   │   ├── subprocess.go      # Subprocess tool runner (stdin/stdout JSON)
 │   │   └── sandbox.go         # Sandbox policy (paths, env allowlist, timeout, output cap)
 │   ├── mcp/
@@ -789,6 +790,7 @@ Build in this order. `bash` is opt-out — on by default. `web_search` and `web_
 | 5 | `list_dir` | Name, type, size, modified time. |
 | 6 | `grep` | Regex search with context lines. |
 | 7 | `http_fetch` | Raw HTTP GET/POST. No content extraction (that's the `web_fetch` skill). |
+| 8 | `tasks` | Session-scoped task checklist. Helps agents track multi-step work. |
 
 ---
 
@@ -906,7 +908,7 @@ The core does one thing well: **take a config, take a mission, run an agent, emi
 
 **Week 2 — Tools, skills, session:**
 10. `Tool` interface + `ToolEngine` with parallel execution
-11. Built-in tools: `bash` (opt-out), `read_file`, `write_file`, `edit_file`, `list_dir`, `grep`, `http_fetch`
+11. Built-in tools: `bash` (opt-out), `read_file`, `write_file`, `edit_file`, `list_dir`, `grep`, `http_fetch`, `tasks`
 12. Subprocess tool runner (external tools via stdin/stdout JSON)
 13. Tool sandboxing: path scope, network allowlist, timeout
 14. Tool calling in the loop (native + prompt-guided fallback, tool message boundary guard)

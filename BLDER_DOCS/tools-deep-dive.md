@@ -35,6 +35,7 @@ Compiled into the agent-core binary. Zero install, zero subprocess overhead. The
 | `list_dir` | List directory contents (name, type, size, modified) | |
 | `grep` | Search files by regex pattern, return matches with line context | |
 | `http_fetch` | Make HTTP GET or POST requests, return status + body | Raw — no content extraction |
+| `tasks` | Session-scoped task checklist for tracking multi-step work | Inspired by zeroclaw's `task_plan` |
 
 Two tools are available but only active in specific modes:
 
@@ -103,6 +104,42 @@ The question: if we have `bash`, why have separate `read_file`, `list_dir`, `gre
   }
 }
 ```
+
+**`tasks`**
+```json
+{
+  "name": "tasks",
+  "description": "Manage a task checklist for the current session. Use to break complex work into steps and track progress.",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "action": {
+        "type": "string",
+        "enum": ["create", "add", "update", "list", "delete"],
+        "description": "Operation to perform"
+      },
+      "tasks": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "title": { "type": "string" },
+            "status": { "type": "string", "enum": ["pending", "in_progress", "completed"] }
+          },
+          "required": ["title"]
+        },
+        "description": "For 'create': list of tasks (replaces existing list)"
+      },
+      "title": { "type": "string", "description": "For 'add': title of the new task" },
+      "id": { "type": "integer", "description": "For 'update': ID of the task to update" },
+      "status": { "type": "string", "enum": ["pending", "in_progress", "completed"], "description": "For 'update': new status" }
+    },
+    "required": ["action"]
+  }
+}
+```
+
+The `tasks` tool is session-scoped — the task list lives in memory and is discarded when the session ends. In chat mode, tasks are persisted with the session via `Snapshot/Restore` so they survive across `--resume`. This gives agents structured state that survives context compaction — even if older conversation turns are summarized, the agent can call `tasks list` to see what's been done and what remains.
 
 ### Go Interface
 
@@ -489,9 +526,10 @@ Week 1 of agent-core (after provider and basic loop):
 7. `grep` — regex search, returns matches with N lines of context
 8. `http_fetch` — GET/POST, configurable allowed hosts, response body + status
 9. `bash` — subprocess, timeout enforced, stderr captured, stdout returned
-10. Tool calling wired into the turn loop (with tool message boundary guard)
-11. Subprocess tool runner — pairs `.json` schema with executable, runs with sandboxing
-12. Approval manager — CLI prompt before dangerous tool execution (bash, write_file)
+10. `tasks` — session-scoped task checklist with shared TaskStore
+11. Tool calling wired into the turn loop (with tool message boundary guard)
+12. Subprocess tool runner — pairs `.json` schema with executable, runs with sandboxing
+13. Approval manager — CLI prompt before dangerous tool execution (bash, write_file)
 
 Skill tool loading (Week 2, with skill system):
 13. Skill tool loader — scans `tools/*.json`, pairs with executables, registers with ToolEngine
